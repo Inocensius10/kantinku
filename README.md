@@ -10,7 +10,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Requires Node.js 18 or newer.
+Requires Node.js 16 or newer.
 
 Without environment values, the application starts in a local demo state. To use production data, add your Supabase project URL and anon key to `.env`, then run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor.
 
