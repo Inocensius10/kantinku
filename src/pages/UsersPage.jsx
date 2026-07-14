@@ -1,0 +1,9 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { Coffee, Plus, ShieldCheck, Users } from 'lucide-react'
+import Page from '../components/ui/Page'
+import StatCard from '../components/ui/StatCard'
+import Modal from '../components/ui/Modal'
+import { demoUsers } from '../data/mockData'
+
+export default function UsersPage() { const [open, setOpen] = useState(false); return <Page title="Pengguna & loket" subtitle="Kelola akses akun dan lokasi operasional." action={<button className="btn primary" onClick={() => setOpen(true)}><Plus size={17} /> Tambah pengguna</button>}><div className="stat-grid three"><StatCard icon={<Users />} label="Total pengguna" value="1.248" info="Aktif di sistem" /><StatCard icon={<Coffee />} label="Loket aktif" value="6" info="Seluruh area sekolah" /><StatCard icon={<ShieldCheck />} label="Admin & karyawan" value="42" info="Akses operasional" /></div><div className="panel"><div className="panel-head"><div><h3>Daftar pengguna</h3><p>Terakhir diperbarui hari ini</p></div></div>{Object.values(demoUsers).map((user) => <button className="mini-row row-button" key={user.role} onClick={() => toast(`Profil ${user.name} dipilih.`)}><span className="avatar">{user.initial}</span><span><b>{user.name}</b><small>{user.subtitle}</small></span><span className="status ready">{user.role}</span></button>)}</div>{open && <Modal title="Tambah pengguna" onClose={() => setOpen(false)}><span className="tag">PENGGUNA BARU</span><h2>Tambahkan pengguna</h2><label>Nama lengkap<input placeholder="Nama pengguna" /></label><label>Role<select defaultValue="employee"><option value="employee">Employee</option><option value="admin">Admin</option><option value="student">Student</option></select></label><button className="btn primary full" onClick={() => { toast.success('Pengguna baru berhasil ditambahkan.'); setOpen(false) }}>Simpan pengguna</button></Modal>}</Page> }
