@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #a94722;
+  --color-brand-dark: #783319;
+  --color-brand-accent: #c96a3b;
+  --color-cream: #fff2d8;
+  --color-cream-light: #f8ebdd;
+  --color-ink: #35251d;
+  --color-ink-soft: #6f5a4e;
+  --color-line: #ead8c6;
+  --color-success: #477b54;
+  --color-danger: #c84c40;
+  --color-warning: #c98a1b;
+
+  --animate-fade-in: fade-in 0.25s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-cream-light font-sans text-ink antialiased;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line/70 bg-white shadow-[0_1px_2px_rgba(53,37,29,0.04)];
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition placeholder:text-ink-soft/50 focus:border-brand-accent focus:ring-4 focus:ring-brand/10 disabled:cursor-not-allowed disabled:bg-cream-light/60;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .table-base {
+    @apply w-full text-left text-sm;
+  }
+  .table-base th {
+    @apply whitespace-nowrap border-b border-line bg-cream-light/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-ink-soft;
+  }
+  .table-base td {
+    @apply border-b border-line/60 px-4 py-3 align-middle;
+  }
+  .table-base tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ---------- Cetak A4 ---------- */
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+  .print-area {
+    font-size: 10.5pt;
+    color: #000;
+  }
+  .print-area table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .print-area th,
+  .print-area td {
+    border: 1px solid #999;
+    padding: 4px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .print-area th {
+    background: #f3e6d6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-area tr {
+    break-inside: avoid;
+  }
+}
