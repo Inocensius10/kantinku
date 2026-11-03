@@ -43,9 +43,9 @@ export default function EmployeeHomePage() {
 
   const reports = data?.reports ?? [];
   const byDate = new Map(reports.map((r) => [r.report_date, r]));
-  const todayIncome = byDate.get(today)?.actual_income ?? 0;
-  const weekIncome = reports.filter((r) => r.report_date >= weekStart).reduce((s, r) => s + r.actual_income, 0);
-  const chart = dateRangeList(sevenAgo, today).map((d) => ({ label: formatDateAxis(d), value: byDate.get(d)?.actual_income ?? 0 }));
+  const todayIncome = byDate.get(today)?.net_income ?? 0;
+  const weekIncome = reports.filter((r) => r.report_date >= weekStart).reduce((s, r) => s + r.net_income, 0);
+  const chart = dateRangeList(sevenAgo, today).map((d) => ({ label: formatDateAxis(d), value: byDate.get(d)?.net_income ?? 0 }));
   const openShortages = (data?.shortages ?? []).filter((s) => s.status !== 'done');
   const att = data?.att;
 
@@ -108,15 +108,15 @@ export default function EmployeeHomePage() {
 
       {/* Ringkasan pemasukan */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Pemasukan hari ini" value={loading ? '…' : formatRupiah(todayIncome)} icon={<Wallet className="h-5 w-5" />} hint={byDate.get(today) ? 'Sudah dilaporkan' : 'Belum dilaporkan'} />
-        <StatCard label="Pemasukan minggu ini" value={loading ? '…' : formatRupiah(weekIncome)} icon={<TrendingUp className="h-5 w-5" />} tone="success" hint={`Sejak ${formatDateShort(weekStart)}`} />
+        <StatCard label="Pendapatan bersih hari ini" value={loading ? '…' : formatRupiah(todayIncome)} icon={<Wallet className="h-5 w-5" />} hint={byDate.get(today) ? 'Sudah dilaporkan' : 'Belum dilaporkan'} />
+        <StatCard label="Pendapatan bersih minggu ini" value={loading ? '…' : formatRupiah(weekIncome)} icon={<TrendingUp className="h-5 w-5" />} tone="success" hint={`Sejak ${formatDateShort(weekStart)}`} />
       </div>
 
       {/* Grafik 7 hari */}
       <Card>
         <CardHeader
           title="Penjualan 7 hari terakhir"
-          subtitle="Pemasukan aktual yang Anda laporkan"
+          subtitle="Pendapatan bersih (cash + QRIS + EDC − modal)"
           action={
             <Link to="/app/grafik" className="text-sm font-semibold text-brand hover:underline">
               Isi laporan

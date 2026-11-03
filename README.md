@@ -16,7 +16,7 @@ Aplikasi internal untuk mengelola **absensi karyawan (GPS)**, **laporan penjuala
 | Absen masuk/pulang berbasis GPS (validasi di database) | Grafik pemasukan harian, per produk, antar-loket, tren mingguan |
 | Riwayat absensi (filter tanggal/bulan/tahun) + cetak | Setujui/tolak registrasi, aktif/nonaktifkan akun, ubah loket |
 | Laporan penjualan harian (produk dari DB, snapshot harga) | Riwayat absensi & penjualan per karyawan |
-| Pemasukan aktual & uang modal brankas | Verifikasi laporan penjualan (laporan terkunci setelah diverifikasi) |
+| Uang cash, QRIS, EDC & uang modal brankas → pendapatan bersih otomatis | Verifikasi laporan penjualan (laporan terkunci setelah diverifikasi) |
 | Laporan kekurangan bahan baku + urgensi | Tindak lanjut laporan stok (Baru → Sedang Ditangani → Selesai), laporan darurat ditonjolkan |
 | Profil, foto, email, password | Kelola loket, produk (harga & urutan), bahan baku, lokasi absensi |
 | | Cetak laporan absensi, penjualan, stok (A4) |
@@ -90,6 +90,7 @@ supabase db push
 | `…000500_rls_policies.sql` | RLS semua tabel + pembatasan hak eksekusi fungsi |
 | `…000600_storage_avatars.sql` | Bucket privat `avatars` + policy |
 | `…000700_seed_data.sql` | Loket Dimsum/Aneka Nasi/Jus, titik absensi, contoh bahan baku |
+| `…000800_sales_payment_methods.sql` | Kolom uang Cash/QRIS/EDC, `net_income` = (cash + QRIS + EDC) − modal brankas, RPC `submit_sales_report` versi baru |
 
 ### b. Authentication → URL Configuration
 - **Site URL**: URL produksi Anda (mis. `https://kantinku.vercel.app`)
@@ -127,7 +128,7 @@ Admin berikutnya dapat dibuat dengan cara yang sama. Admin tidak dapat mengubah 
 - **Karyawan tidak bisa menulis langsung** ke `attendance`, `daily_sales_reports`, `stock_shortage_reports`. Semua lewat RPC yang memvalidasi status akun, loket, kepemilikan, duplikasi, dan memakai `now()` server.
 - **Absensi**: jarak dihitung dengan Haversine di database terhadap `app_settings`; akurasi GPS buruk ditolak; unique `(user_id, work_date)` mencegah duplikasi; zona waktu `Asia/Jakarta`.
 - **Profil**: trigger `protect_profile_fields` menolak perubahan role/status/loket/email oleh non-admin.
-- **Laporan penjualan**: satu per karyawan per hari, bisa diedit sampai diverifikasi; harga disimpan sebagai snapshot.
+- **Laporan penjualan**: satu per karyawan per hari, bisa diedit sampai diverifikasi; harga disimpan sebagai snapshot. Total uang (`actual_income`) dihitung trigger dari cash + QRIS + EDC, pendapatan bersih (`net_income`) = total − modal brankas (kolom generated).
 - **Data historis**: FK `ON DELETE RESTRICT` — loket/produk/bahan baku dinonaktifkan, bukan dihapus.
 - **Storage**: bucket `avatars` privat, path `{user_id}/avatar.jpg`, hanya pemilik yang bisa menulis; pemilik & admin bisa membaca (signed URL).
 

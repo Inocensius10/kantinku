@@ -26,7 +26,7 @@ export default function SalesReportsPage() {
   const rows = useMemo(() => (q.data ?? []).filter((r) => !status || r.status === status), [q.data, status]);
 
   const totals = rows.reduce(
-    (s, r) => ({ income: s.income + r.actual_income, est: s.est + r.estimated_total, items: s.items + r.total_items, capital: s.capital + r.safe_capital }),
+    (s, r) => ({ income: s.income + r.net_income, est: s.est + r.estimated_total, items: s.items + r.total_items, capital: s.capital + r.safe_capital }),
     { income: 0, est: 0, items: 0, capital: 0 },
   );
 
@@ -47,7 +47,7 @@ export default function SalesReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Pemasukan aktual" value={formatRupiah(totals.income)} icon={<Wallet className="h-5 w-5" />} />
+        <StatCard label="Pendapatan bersih" value={formatRupiah(totals.income)} icon={<Wallet className="h-5 w-5" />} />
         <StatCard label="Estimasi produk" value={formatRupiah(totals.est)} icon={<Wallet className="h-5 w-5" />} tone="neutral" />
         <StatCard label="Produk terjual" value={formatNumber(totals.items)} icon={<ShoppingBag className="h-5 w-5" />} tone="success" />
         <StatCard
@@ -75,8 +75,11 @@ export default function SalesReportsPage() {
                   <th>Loket</th>
                   <th className="text-right">Produk</th>
                   <th className="text-right">Estimasi</th>
-                  <th className="text-right">Pemasukan aktual</th>
+                  <th className="text-right">Cash</th>
+                  <th className="text-right">QRIS</th>
+                  <th className="text-right">EDC</th>
                   <th className="text-right">Modal brankas</th>
+                  <th className="text-right">Bersih</th>
                   <th>Status</th>
                   <th />
                 </tr>
@@ -89,8 +92,11 @@ export default function SalesReportsPage() {
                     <td className="whitespace-nowrap">{r.outlet?.name}</td>
                     <td className="text-right tabular-nums">{formatNumber(r.total_items)}</td>
                     <td className="text-right tabular-nums text-ink-soft">{formatRupiah(r.estimated_total)}</td>
-                    <td className="text-right font-semibold tabular-nums">{formatRupiah(r.actual_income)}</td>
-                    <td className="text-right tabular-nums">{formatRupiah(r.safe_capital)}</td>
+                    <td className="text-right tabular-nums">{formatRupiah(r.cash_income)}</td>
+                    <td className="text-right tabular-nums">{formatRupiah(r.qris_income)}</td>
+                    <td className="text-right tabular-nums">{formatRupiah(r.edc_income)}</td>
+                    <td className="text-right tabular-nums text-danger">−{formatRupiah(r.safe_capital)}</td>
+                    <td className="text-right font-semibold tabular-nums">{formatRupiah(r.net_income)}</td>
                     <td>
                       <SalesStatusBadge status={r.status} />
                     </td>

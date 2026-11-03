@@ -7,8 +7,12 @@ const REPORT_SELECT = `*, items:sales_report_items(*), profile:profiles!daily_sa
 function normalize(r: DailySalesReport): DailySalesReport {
   return {
     ...r,
+    cash_income: Number(r.cash_income),
+    qris_income: Number(r.qris_income),
+    edc_income: Number(r.edc_income),
     actual_income: Number(r.actual_income),
     safe_capital: Number(r.safe_capital),
+    net_income: Number(r.net_income),
     estimated_total: Number(r.estimated_total),
     items: (r.items ?? [])
       .filter((i) => i.quantity > 0)
@@ -39,13 +43,17 @@ export const salesService = {
 
   // ---------------- Laporan ----------------
   async submitReport(p: {
-    actualIncome: number;
+    cashIncome: number;
+    qrisIncome: number;
+    edcIncome: number;
     safeCapital: number;
     notes: string;
     items: Array<{ product_id: string; quantity: number }>;
   }): Promise<string> {
     const res = await supabase.rpc('submit_sales_report', {
-      p_actual_income: p.actualIncome,
+      p_cash_income: p.cashIncome,
+      p_qris_income: p.qrisIncome,
+      p_edc_income: p.edcIncome,
       p_safe_capital: p.safeCapital,
       p_notes: p.notes,
       p_items: p.items,

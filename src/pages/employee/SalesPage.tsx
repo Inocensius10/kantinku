@@ -60,38 +60,47 @@ export default function SalesPage() {
   }, [formQ.data, report]);
 
   const [qty, setQty] = useState<Record<string, number>>({});
-  const [actualIncome, setActualIncome] = useState<number | ''>('');
+  const [cashIncome, setCashIncome] = useState<number | ''>('');
+  const [qrisIncome, setQrisIncome] = useState<number | ''>('');
+  const [edcIncome, setEdcIncome] = useState<number | ''>('');
   const [safeCapital, setSafeCapital] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
-  const [errors, setErrors] = useState<{ income?: string; capital?: string }>({});
+  const [errors, setErrors] = useState<{ cash?: string; capital?: string }>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const q: Record<string, number> = {};
     for (const it of report?.items ?? []) q[it.product_id] = it.quantity;
     setQty(q);
-    setActualIncome(report ? report.actual_income : '');
+    setCashIncome(report ? report.cash_income : '');
+    setQrisIncome(report ? report.qris_income : '');
+    setEdcIncome(report ? report.edc_income : '');
     setSafeCapital(report ? report.safe_capital : '');
     setNotes(report?.notes ?? '');
   }, [report]);
 
   const estimated = rows.reduce((s, r) => s + r.price * (qty[r.product_id] ?? 0), 0);
   const totalItems = rows.reduce((s, r) => s + (qty[r.product_id] ?? 0), 0);
-  const diff = actualIncome === '' ? null : actualIncome - estimated;
+  const moneyFilled = cashIncome !== '' || qrisIncome !== '' || edcIncome !== '';
+  const totalMoney = Number(cashIncome || 0) + Number(qrisIncome || 0) + Number(edcIncome || 0);
+  const netIncome = totalMoney - Number(safeCapital || 0);
+  const diff = moneyFilled && safeCapital !== '' ? netIncome - estimated : null;
 
   const setQ = (id: string, v: number) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(100000, Math.floor(v || 0))) }));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: typeof errors = {};
-    if (actualIncome === '') errs.income = 'Total pemasukan aktual wajib diisi.';
+    if (cashIncome === '') errs.cash = 'Uang cash wajib diisi (isi 0 jika tidak ada).';
     if (safeCapital === '') errs.capital = 'Uang modal brankas wajib diisi.';
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setSaving(true);
     try {
       await salesService.submitReport({
-        actualIncome: Number(actualIncome),
+        cashIncome: Number(cashIncome),
+        qrisIncome: Number(qrisIncome || 0),
+        edcIncome: Number(edcIncome || 0),
         safeCapital: Number(safeCapital),
         notes,
         items: rows.map((r) => ({ product_id: r.product_id, quantity: qty[r.product_id] ?? 0 })),
@@ -115,7 +124,7 @@ export default function SalesPage() {
     const byDate = new Map(chartReports.map((r) => [r.report_date, r]));
     return dateRangeList(chartFrom, today).map((d) => ({
       label: formatDateAxis(d),
-      'Pemasukan aktual': byDate.get(d)?.actual_income ?? 0,
+      'Pendapatan bersih': byDate.get(d)?.net_income ?? 0,
       'Estimasi produk': byDate.get(d)?.estimated_total ?? 0,
     }));
   }, [chartReports, chartFrom, today]);
@@ -126,7 +135,7 @@ export default function SalesPage() {
     return [...m.entries()].map(([name, quantity]) => ({ name, quantity })).sort((a, b) => b.quantity - a.quantity);
   }, [chartReports]);
 
-  const periodIncome = chartReports.reduce((s, r) => s + r.actual_income, 0);
+  const periodIncome = chartReports.reduce((s, r) => s + r.net_income, 0);
   const periodItems = chartReports.reduce((s, r) => s + r.total_items, 0);
 
   return (
@@ -137,7 +146,7 @@ export default function SalesPage() {
       <Card>
         <CardHeader
           title="Laporan hari ini"
-          subtitle="Isi jumlah produk terjual, pemasukan aktual, dan uang modal di brankas."
+          subtitle="Isi jumlah produk terjual, uang cash, QRIS, EDC, dan uang modal di brankas."
           icon={<ShoppingBag className="h-5 w-5" />}
           action={report ? <SalesStatusBadge status={report.status} /> : null}
         />
@@ -162,7 +171,7 @@ export default function SalesPage() {
 
             {/* Produk */}
             {rows.length === 0 ? (
-              <EmptyState title="Belum ada produk" description="Admin belum menentukan produk untuk loket Anda. Anda tetap dapat melaporkan pemasukan & uang modal." />
+              <EmptyState title="Belum ada produk" description="Admin belum menentukan produk untuk loket Anda. Anda tetap dapat melaporkan uang cash, QRIS, EDC & uang modal." />
             ) : (
               <div className="overflow-hidden rounded-2xl border border-line/70">
                 <div className="hidden grid-cols-[1fr_120px_150px_130px] gap-3 bg-cream-light/60 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-soft sm:grid">
@@ -228,14 +237,36 @@ export default function SalesPage() {
               </div>
             )}
 
-            {/* Pemasukan & modal */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Total pemasukan aktual hari ini" required error={errors.income} hint="Uang yang benar-benar diterima (tunai + non-tunai).">
-                <CurrencyInput value={actualIncome} onChange={setActualIncome} disabled={locked} />
+            {/* Uang hari ini & modal */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Uang cash" required error={errors.cash} hint="Uang tunai yang diterima hari ini.">
+                <CurrencyInput value={cashIncome} onChange={setCashIncome} disabled={locked} />
               </Field>
-              <Field label="Uang modal di brankas" required error={errors.capital} hint="Jumlah uang modal yang tersedia saat ini.">
-                <CurrencyInput value={safeCapital} onChange={setSafeCapital} disabled={locked} />
+              <Field label="Uang di QRIS" hint="Pembayaran QRIS hari ini. Kosong = 0.">
+                <CurrencyInput value={qrisIncome} onChange={setQrisIncome} disabled={locked} />
               </Field>
+              <Field label="Uang EDC" hint="Pembayaran kartu (mesin EDC) hari ini. Kosong = 0.">
+                <CurrencyInput value={edcIncome} onChange={setEdcIncome} disabled={locked} />
+              </Field>
+            </div>
+            <Field label="Uang modal di brankas" required error={errors.capital} hint="Akan dikurangkan dari total uang hari ini.">
+              <CurrencyInput value={safeCapital} onChange={setSafeCapital} disabled={locked} />
+            </Field>
+
+            {/* Rekap perhitungan */}
+            <div className="space-y-1.5 rounded-2xl border border-line/70 bg-cream-light/50 p-4 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-ink-soft">Cash + QRIS + EDC</span>
+                <span className="font-semibold tabular-nums">{formatRupiah(totalMoney)}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-ink-soft">Dikurangi modal brankas</span>
+                <span className="font-semibold tabular-nums text-danger">− {formatRupiah(Number(safeCapital || 0))}</span>
+              </div>
+              <div className="flex justify-between gap-2 border-t border-line pt-2">
+                <span className="font-semibold text-brand-dark">Pendapatan bersih hari ini</span>
+                <span className={`text-lg font-extrabold tabular-nums ${netIncome < 0 ? 'text-danger' : 'text-brand-dark'}`}>{formatRupiah(netIncome)}</span>
+              </div>
             </div>
 
             {diff !== null && rows.length > 0 && (
@@ -244,7 +275,7 @@ export default function SalesPage() {
                   diff === 0 ? 'bg-success/10 text-success' : 'bg-warning/10 text-[#8a5d0c]'
                 }`}
               >
-                <span className="font-medium">Selisih pemasukan aktual vs estimasi produk</span>
+                <span className="font-medium">Selisih pendapatan bersih vs estimasi produk</span>
                 <span className="font-bold tabular-nums">
                   {diff > 0 ? '+' : ''}
                   {formatRupiah(diff)}
@@ -253,7 +284,7 @@ export default function SalesPage() {
             )}
 
             <Field label="Catatan tambahan (opsional)">
-              <Textarea rows={2} maxLength={1000} disabled={locked} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mis. ada produk retur, pembayaran QRIS, dll." />
+              <Textarea rows={2} maxLength={1000} disabled={locked} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mis. ada produk retur, dll." />
             </Field>
 
             {!locked && (
@@ -288,15 +319,15 @@ export default function SalesPage() {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <StatCard label={`Pemasukan ${days} hari`} value={formatRupiah(periodIncome)} icon={<Wallet className="h-5 w-5" />} />
+                <StatCard label={`Pendapatan bersih ${days} hari`} value={formatRupiah(periodIncome)} icon={<Wallet className="h-5 w-5" />} />
                 <StatCard label="Produk terjual" value={formatNumber(periodItems)} icon={<ShoppingBag className="h-5 w-5" />} tone="success" />
               </div>
               <div>
-                <p className="mb-2 text-sm font-semibold">Pemasukan aktual vs estimasi</p>
+                <p className="mb-2 text-sm font-semibold">Pendapatan bersih vs estimasi produk</p>
                 {days <= 7 ? (
-                  <TrendLineChart data={trend} series={['Pemasukan aktual', 'Estimasi produk']} height={240} />
+                  <TrendLineChart data={trend} series={['Pendapatan bersih', 'Estimasi produk']} height={240} />
                 ) : (
-                  <IncomeAreaChart data={trend.map((t) => ({ label: t.label as string, value: t['Pemasukan aktual'] as number }))} height={240} name="Pemasukan aktual" />
+                  <IncomeAreaChart data={trend.map((t) => ({ label: t.label as string, value: t['Pendapatan bersih'] as number }))} height={240} name="Pendapatan bersih" />
                 )}
               </div>
               <div>
@@ -321,11 +352,11 @@ export default function SalesPage() {
                   <div>
                     <p className="text-sm font-semibold">{formatDateShort(r.report_date)}</p>
                     <p className="text-xs text-ink-soft">
-                      {formatNumber(r.total_items)} item · Modal {formatRupiah(r.safe_capital)}
+                      {formatNumber(r.total_items)} item · Cash {formatRupiah(r.cash_income)} · QRIS {formatRupiah(r.qris_income)} · EDC {formatRupiah(r.edc_income)} · Modal {formatRupiah(r.safe_capital)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold tabular-nums">{formatRupiah(r.actual_income)}</span>
+                    <span className="font-bold tabular-nums" title="Pendapatan bersih">{formatRupiah(r.net_income)}</span>
                     <SalesStatusBadge status={r.status} />
                   </div>
                 </li>

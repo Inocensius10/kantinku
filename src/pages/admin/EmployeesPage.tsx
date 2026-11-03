@@ -348,8 +348,11 @@ function EmployeeDetailModal({
                     <th>Tanggal</th>
                     <th className="text-right">Produk</th>
                     <th className="text-right">Estimasi</th>
-                    <th className="text-right">Pemasukan aktual</th>
+                    <th className="text-right">Cash</th>
+                    <th className="text-right">QRIS</th>
+                    <th className="text-right">EDC</th>
                     <th className="text-right">Modal</th>
+                    <th className="text-right">Bersih</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -359,8 +362,11 @@ function EmployeeDetailModal({
                       <td className="whitespace-nowrap">{formatDateShort(r.report_date)}</td>
                       <td className="text-right tabular-nums">{formatNumber(r.total_items)}</td>
                       <td className="text-right tabular-nums">{formatRupiah(r.estimated_total)}</td>
-                      <td className="text-right font-semibold tabular-nums">{formatRupiah(r.actual_income)}</td>
-                      <td className="text-right tabular-nums">{formatRupiah(r.safe_capital)}</td>
+                      <td className="text-right tabular-nums">{formatRupiah(r.cash_income)}</td>
+                      <td className="text-right tabular-nums">{formatRupiah(r.qris_income)}</td>
+                      <td className="text-right tabular-nums">{formatRupiah(r.edc_income)}</td>
+                      <td className="text-right tabular-nums">−{formatRupiah(r.safe_capital)}</td>
+                      <td className="text-right font-semibold tabular-nums">{formatRupiah(r.net_income)}</td>
                       <td>
                         <SalesStatusBadge status={r.status} />
                       </td>
@@ -369,7 +375,7 @@ function EmployeeDetailModal({
                 </tbody>
               </table>
               <p className="border-t border-line/60 px-4 py-2 text-sm text-ink-soft">
-                Total pemasukan aktual: <b className="text-ink">{formatRupiah(salesQ.data.reduce((s, r) => s + r.actual_income, 0))}</b>
+                Total pendapatan bersih: <b className="text-ink">{formatRupiah(salesQ.data.reduce((s, r) => s + r.net_income, 0))}</b>
               </p>
             </div>
           ))}

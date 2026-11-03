@@ -26,7 +26,7 @@ export function SalesReportDetailModal({
   useEffect(() => setNotes(report?.admin_notes ?? ''), [report]);
 
   if (!report) return null;
-  const diff = report.actual_income - report.estimated_total;
+  const diff = report.net_income - report.estimated_total;
 
   const setStatus = async (status: 'verified' | 'submitted') => {
     setSaving(true);
@@ -106,17 +106,34 @@ export function SalesReportDetailModal({
           </table>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl bg-cream-light p-3">
-            <p className="text-xs text-ink-soft">Pemasukan aktual</p>
-            <p className="text-lg font-bold tabular-nums">{formatRupiah(report.actual_income)}</p>
+        <div className="space-y-1.5 rounded-xl border border-line/70 p-4 text-sm">
+          {[
+            ['Uang cash', report.cash_income],
+            ['Uang QRIS', report.qris_income],
+            ['Uang EDC', report.edc_income],
+          ].map(([label, value]) => (
+            <div key={label as string} className="flex justify-between gap-2">
+              <span className="text-ink-soft">{label}</span>
+              <span className="tabular-nums">{formatRupiah(value as number)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between gap-2 border-t border-line pt-1.5 font-semibold">
+            <span>Total uang</span>
+            <span className="tabular-nums">{formatRupiah(report.actual_income)}</span>
           </div>
+          <div className="flex justify-between gap-2">
+            <span className="text-ink-soft">Dikurangi modal brankas</span>
+            <span className="tabular-nums text-danger">− {formatRupiah(report.safe_capital)}</span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl bg-cream-light p-3">
-            <p className="text-xs text-ink-soft">Uang modal brankas</p>
-            <p className="text-lg font-bold tabular-nums">{formatRupiah(report.safe_capital)}</p>
+            <p className="text-xs text-ink-soft">Pendapatan bersih</p>
+            <p className={`text-lg font-bold tabular-nums ${report.net_income < 0 ? 'text-danger' : ''}`}>{formatRupiah(report.net_income)}</p>
           </div>
           <div className={`rounded-xl p-3 ${diff === 0 ? 'bg-success/10' : 'bg-warning/10'}`}>
-            <p className="text-xs text-ink-soft">Selisih aktual − estimasi</p>
+            <p className="text-xs text-ink-soft">Selisih bersih − estimasi</p>
             <p className={`text-lg font-bold tabular-nums ${diff === 0 ? 'text-success' : 'text-[#8a5d0c]'}`}>
               {diff > 0 ? '+' : ''}
               {formatRupiah(diff)}

@@ -122,8 +122,16 @@ function SalesReport({ range, outletId }: { range: DateRange; outletId: string }
   const rows = [...(q.data ?? [])].sort((a, b) => a.report_date.localeCompare(b.report_date));
   if (!rows.length) return <EmptyState title="Tidak ada laporan penjualan" />;
   const tot = rows.reduce(
-    (s, r) => ({ items: s.items + r.total_items, est: s.est + r.estimated_total, income: s.income + r.actual_income, capital: s.capital + r.safe_capital }),
-    { items: 0, est: 0, income: 0, capital: 0 },
+    (s, r) => ({
+      items: s.items + r.total_items,
+      est: s.est + r.estimated_total,
+      cash: s.cash + r.cash_income,
+      qris: s.qris + r.qris_income,
+      edc: s.edc + r.edc_income,
+      capital: s.capital + r.safe_capital,
+      net: s.net + r.net_income,
+    }),
+    { items: 0, est: 0, cash: 0, qris: 0, edc: 0, capital: 0, net: 0 },
   );
   return (
     <div className="overflow-x-auto print:overflow-visible">
@@ -137,8 +145,11 @@ function SalesReport({ range, outletId }: { range: DateRange; outletId: string }
             <th className="text-right">Jumlah</th>
             <th className="text-right">Harga</th>
             <th className="text-right">Total penjualan</th>
-            <th className="text-right">Pemasukan aktual</th>
+            <th className="text-right">Cash</th>
+            <th className="text-right">QRIS</th>
+            <th className="text-right">EDC</th>
             <th className="text-right">Modal brankas</th>
+            <th className="text-right">Pendapatan bersih</th>
           </tr>
         </thead>
         <tbody>
@@ -172,8 +183,11 @@ function SalesReport({ range, outletId }: { range: DateRange; outletId: string }
                   ))}
                   <div className="mt-1 whitespace-nowrap border-t border-line pt-1 font-semibold">{formatRupiah(r.estimated_total)}</div>
                 </td>
-                <td className="whitespace-nowrap text-right font-semibold tabular-nums">{formatRupiah(r.actual_income)}</td>
-                <td className="whitespace-nowrap text-right tabular-nums">{formatRupiah(r.safe_capital)}</td>
+                <td className="whitespace-nowrap text-right tabular-nums">{formatRupiah(r.cash_income)}</td>
+                <td className="whitespace-nowrap text-right tabular-nums">{formatRupiah(r.qris_income)}</td>
+                <td className="whitespace-nowrap text-right tabular-nums">{formatRupiah(r.edc_income)}</td>
+                <td className="whitespace-nowrap text-right tabular-nums">−{formatRupiah(r.safe_capital)}</td>
+                <td className="whitespace-nowrap text-right font-semibold tabular-nums">{formatRupiah(r.net_income)}</td>
               </tr>
             );
           })}
@@ -186,8 +200,11 @@ function SalesReport({ range, outletId }: { range: DateRange; outletId: string }
             <td className="px-4 py-3 text-right tabular-nums">{formatNumber(tot.items)}</td>
             <td />
             <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.est)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.income)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.capital)}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.cash)}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.qris)}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.edc)}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">−{formatRupiah(tot.capital)}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatRupiah(tot.net)}</td>
           </tr>
         </tfoot>
       </table>

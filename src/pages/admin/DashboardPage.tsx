@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
   const attByUser = new Map(attendance.map((a) => [a.user_id, a]));
   const presentCount = employees.filter((e) => attByUser.has(e.id)).length;
   const absentCount = employees.length - presentCount;
-  const incomeToday = dayReports.reduce((s, r) => s + r.actual_income, 0);
+  const incomeToday = dayReports.reduce((s, r) => s + r.net_income, 0);
   const itemsToday = dayReports.reduce((s, r) => s + r.total_items, 0);
 
   const avatarUrls = useAvatarUrls(employees.map((e) => e.avatar_path));
@@ -78,7 +78,7 @@ export default function AdminDashboardPage() {
   const rangeReports = reports.filter((r) => r.report_date >= rangeFrom);
   const dailyChart = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of rangeReports) m.set(r.report_date, (m.get(r.report_date) ?? 0) + r.actual_income);
+    for (const r of rangeReports) m.set(r.report_date, (m.get(r.report_date) ?? 0) + r.net_income);
     return dateRangeList(rangeFrom, date).map((dt) => ({ label: formatDateAxis(dt), value: m.get(dt) ?? 0 }));
   }, [rangeReports, rangeFrom, date]);
 
@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
 
   const outletChart = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of allReports) if (r.report_date >= rangeFrom) m.set(r.outlet_id, (m.get(r.outlet_id) ?? 0) + r.actual_income);
+    for (const r of allReports) if (r.report_date >= rangeFrom) m.set(r.outlet_id, (m.get(r.outlet_id) ?? 0) + r.net_income);
     return outlets.filter((o) => o.is_active || m.has(o.id)).map((o) => ({ name: o.name, income: m.get(o.id) ?? 0 }));
   }, [allReports, outlets, rangeFrom]);
 
@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
         for (const r of reports) {
           if (r.report_date >= w && r.report_date <= shiftDate(w, 6) && r.report_date <= date) {
             const n = nameById.get(r.outlet_id) ?? 'Lainnya';
-            if (n in row) row[n] = (row[n] as number) + r.actual_income;
+            if (n in row) row[n] = (row[n] as number) + r.net_income;
           }
         }
         return row;
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
         <StatCard label="Karyawan aktif" value={q.loading ? '…' : employees.length} icon={<Users className="h-5 w-5" />} />
         <StatCard label="Hadir" value={q.loading ? '…' : presentCount} icon={<UserCheck className="h-5 w-5" />} tone="success" />
         <StatCard label="Belum absen" value={q.loading ? '…' : absentCount} icon={<UserX className="h-5 w-5" />} tone={absentCount ? 'warning' : 'neutral'} />
-        <StatCard label="Pemasukan" value={q.loading ? '…' : formatRupiah(incomeToday)} icon={<Wallet className="h-5 w-5" />} />
+        <StatCard label="Pendapatan bersih" value={q.loading ? '…' : formatRupiah(incomeToday)} icon={<Wallet className="h-5 w-5" />} />
         <StatCard label="Produk terjual" value={q.loading ? '…' : formatNumber(itemsToday)} icon={<ShoppingBag className="h-5 w-5" />} tone="success" />
         <StatCard
           label="Stok belum selesai"
@@ -174,7 +174,7 @@ export default function AdminDashboardPage() {
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           <Card>
-            <CardHeader title="Pemasukan harian" subtitle={`${formatDateShort(rangeFrom)} – ${formatDateShort(date)}`} />
+            <CardHeader title="Pendapatan bersih harian" subtitle={`${formatDateShort(rangeFrom)} – ${formatDateShort(date)}`} />
             <div className="px-2 pb-4 pt-3 sm:px-4">
               <IncomeAreaChart data={dailyChart} />
             </div>
@@ -192,7 +192,7 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
           <Card>
-            <CardHeader title="Tren pemasukan mingguan" subtitle={`${WEEKS} minggu terakhir`} />
+            <CardHeader title="Tren pendapatan bersih mingguan" subtitle={`${WEEKS} minggu terakhir`} />
             <div className="px-2 pb-4 pt-3 sm:px-4">
               <TrendLineChart data={weeklyChart.data} series={weeklyChart.series} />
             </div>
@@ -281,8 +281,9 @@ export default function AdminDashboardPage() {
                     <th>Karyawan</th>
                     <th>Loket</th>
                     <th className="text-right">Produk terjual</th>
-                    <th className="text-right">Pemasukan aktual</th>
+                    <th className="text-right">Total uang</th>
                     <th className="text-right">Modal brankas</th>
+                    <th className="text-right">Bersih</th>
                     <th>Status</th>
                     <th />
                   </tr>
@@ -293,8 +294,9 @@ export default function AdminDashboardPage() {
                       <td className="whitespace-nowrap font-medium">{r.profile?.full_name ?? '—'}</td>
                       <td className="whitespace-nowrap">{r.outlet?.name}</td>
                       <td className="text-right tabular-nums">{formatNumber(r.total_items)}</td>
-                      <td className="text-right font-semibold tabular-nums">{formatRupiah(r.actual_income)}</td>
-                      <td className="text-right tabular-nums">{formatRupiah(r.safe_capital)}</td>
+                      <td className="text-right tabular-nums" title={`Cash ${formatRupiah(r.cash_income)} · QRIS ${formatRupiah(r.qris_income)} · EDC ${formatRupiah(r.edc_income)}`}>{formatRupiah(r.actual_income)}</td>
+                      <td className="text-right tabular-nums">−{formatRupiah(r.safe_capital)}</td>
+                      <td className="text-right font-semibold tabular-nums">{formatRupiah(r.net_income)}</td>
                       <td>
                         <SalesStatusBadge status={r.status} />
                       </td>

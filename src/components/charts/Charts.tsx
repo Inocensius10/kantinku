@@ -52,7 +52,7 @@ function CountTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 /** Area chart pemasukan harian. data: [{label, value}] */
-export function IncomeAreaChart({ data, height = 240, name = 'Pemasukan' }: { data: Array<{ label: string; value: number }>; height?: number; name?: string }) {
+export function IncomeAreaChart({ data, height = 240, name = 'Pendapatan bersih' }: { data: Array<{ label: string; value: number }>; height?: number; name?: string }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
@@ -97,7 +97,7 @@ export function OutletBarChart({ data, height = 240 }: { data: Array<{ name: str
         <XAxis dataKey="name" {...axisProps} />
         <YAxis {...axisProps} width={62} tickFormatter={(v: number) => formatCompactRupiah(v)} />
         <Tooltip content={<RupiahTooltip />} cursor={{ fill: '#F8EBDD' }} />
-        <Bar dataKey="income" name="Pemasukan" fill="#A94722" radius={[6, 6, 0, 0]} barSize={36} />
+        <Bar dataKey="income" name="Pendapatan bersih" fill="#A94722" radius={[6, 6, 0, 0]} barSize={36} />
       </BarChart>
     </ResponsiveContainer>
   );

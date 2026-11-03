@@ -111,8 +111,17 @@ export interface DailySalesReport {
   report_date: string;
   estimated_total: number;
   total_items: number;
+  /** Uang cash (tunai) hari ini */
+  cash_income: number;
+  /** Uang yang masuk lewat QRIS */
+  qris_income: number;
+  /** Uang yang masuk lewat mesin EDC (kartu debit/kredit) */
+  edc_income: number;
+  /** Total uang = cash + QRIS + EDC (dihitung database) */
   actual_income: number;
   safe_capital: number;
+  /** Pendapatan bersih = total uang - uang modal brankas (dihitung database) */
+  net_income: number;
   notes: string | null;
   status: SalesReportStatus;
   admin_notes: string | null;
