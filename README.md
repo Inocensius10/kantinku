@@ -12,11 +12,11 @@ Aplikasi internal untuk mengelola **absensi karyawan (GPS)**, **laporan penjuala
 | Karyawan | Admin |
 |---|---|
 | Registrasi (role otomatis `employee`, status `pending`) & login | Dashboard dengan filter loket & tanggal |
-| Dashboard pribadi + grafik 7 hari | Statistik karyawan aktif, hadir, belum absen, pemasukan, produk terjual, stok terbuka |
+| Dashboard + grafik pendapatan bersih **semua loket** (agregat, bisa dilihat semua karyawan) | Statistik karyawan aktif, hadir, belum absen, pemasukan, produk terjual, stok terbuka |
 | Absen masuk/pulang berbasis GPS (validasi di database) | Grafik pemasukan harian, per produk, antar-loket, tren mingguan |
 | Riwayat absensi (filter tanggal/bulan/tahun) + cetak | Setujui/tolak registrasi, aktif/nonaktifkan akun, ubah loket |
 | Laporan penjualan harian (produk dari DB, snapshot harga) | Riwayat absensi & penjualan per karyawan |
-| Uang cash, QRIS, EDC & uang modal brankas → pendapatan bersih otomatis | Verifikasi laporan penjualan (laporan terkunci setelah diverifikasi) |
+| Uang cash, QRIS, EDC & uang modal brankas → pendapatan bersih otomatis | Verifikasi laporan penjualan; **input/ubah uang Cash, QRIS, EDC & modal** untuk karyawan mana pun |
 | Laporan kekurangan bahan baku + urgensi | Tindak lanjut laporan stok (Baru → Sedang Ditangani → Selesai), laporan darurat ditonjolkan |
 | Profil, foto, email, password | Kelola loket, produk (harga & urutan), bahan baku, lokasi absensi |
 | | Cetak laporan absensi, penjualan, stok (A4) |
@@ -91,6 +91,7 @@ supabase db push
 | `…000600_storage_avatars.sql` | Bucket privat `avatars` + policy |
 | `…000700_seed_data.sql` | Loket Dimsum/Aneka Nasi/Jus, titik absensi, contoh bahan baku |
 | `…000800_sales_payment_methods.sql` | Kolom uang Cash/QRIS/EDC, `net_income` = (cash + QRIS + EDC) − modal brankas, RPC `submit_sales_report` versi baru |
+| `…20261104000100_shared_sales_summary_admin_input.sql` | RPC `sales_daily_summary` (agregat untuk semua user aktif) & `admin_save_sales_money` (input uang oleh admin, tercatat di `money_edited_by/at`) |
 
 ### b. Authentication → URL Configuration
 - **Site URL**: URL produksi Anda (mis. `https://kantinku.vercel.app`)

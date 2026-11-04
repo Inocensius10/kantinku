@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { DailySalesReport, DateRange, SalesProduct, SalesReportStatus } from '@/types';
+import type { DailySalesReport, DateRange, SalesDailySummary, SalesProduct, SalesReportStatus } from '@/types';
 import { PROFILE_MINI, unwrap } from './base';
 
 const REPORT_SELECT = `*, items:sales_report_items(*), profile:profiles!daily_sales_reports_user_id_fkey(${PROFILE_MINI}), outlet:outlets(id, name)`;
@@ -57,6 +57,38 @@ export const salesService = {
       p_safe_capital: p.safeCapital,
       p_notes: p.notes,
       p_items: p.items,
+    });
+    return unwrap(res) as string;
+  },
+
+  /** Ringkasan pendapatan bersih semua loket (agregat, untuk semua user aktif). */
+  async dailySummary(range: DateRange): Promise<SalesDailySummary[]> {
+    const res = await supabase.rpc('sales_daily_summary', { p_from: range.from, p_to: range.to });
+    return (unwrap(res) as SalesDailySummary[]).map((r) => ({
+      ...r,
+      net_income: Number(r.net_income),
+      total_income: Number(r.total_income),
+      total_items: Number(r.total_items),
+      report_count: Number(r.report_count),
+    }));
+  },
+
+  /** Admin: isi / ubah uang Cash, QRIS, EDC & modal pada laporan karyawan (dibuat bila belum ada). */
+  async adminSaveMoney(p: {
+    userId: string;
+    reportDate: string;
+    cashIncome: number;
+    qrisIncome: number;
+    edcIncome: number;
+    safeCapital: number;
+  }): Promise<string> {
+    const res = await supabase.rpc('admin_save_sales_money', {
+      p_user_id: p.userId,
+      p_report_date: p.reportDate,
+      p_cash_income: p.cashIncome,
+      p_qris_income: p.qrisIncome,
+      p_edc_income: p.edcIncome,
+      p_safe_capital: p.safeCapital,
     });
     return unwrap(res) as string;
   },

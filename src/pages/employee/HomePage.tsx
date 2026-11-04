@@ -1,51 +1,39 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarCheck, CalendarDays, ClipboardList, LogIn, LogOut, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowRight, CalendarCheck, CalendarDays, ClipboardList, LogIn, LogOut, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAsync } from '@/hooks/useAsync';
 import { attendanceService } from '@/services/attendanceService';
 import { salesService } from '@/services/salesService';
 import { inventoryService } from '@/services/inventoryService';
 import { Avatar } from '@/components/ui/Avatar';
-import { Card, CardHeader, StatCard } from '@/components/ui/Card';
+import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge, ShortageStatusBadge, UrgencyBadge } from '@/components/ui/Badge';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/Feedback';
-import { IncomeAreaChart } from '@/components/charts/Charts';
+import { NetIncomeOverview } from '@/components/charts/NetIncomeOverview';
 import {
-  dateRangeList,
-  formatDateAxis,
   formatDateLong,
   formatDateShort,
-  formatRupiah,
   formatTime,
   jakartaDate,
-  shiftDate,
-  startOfWeek,
 } from '@/lib/format';
 
 export default function EmployeeHomePage() {
   const { profile } = useAuth();
   const today = jakartaDate();
-  const weekStart = startOfWeek(today);
-  const sevenAgo = shiftDate(today, -6);
-  const from = weekStart < sevenAgo ? weekStart : sevenAgo;
 
   const { data, loading, error, reload } = useAsync(async () => {
     const uid = profile!.id;
-    const [att, reports, shortages] = await Promise.all([
+    const [att, todayReport, shortages] = await Promise.all([
       attendanceService.getMine(uid, today),
-      salesService.listMine(uid, { from, to: today }),
+      salesService.getMyReport(uid, today),
       inventoryService.listMine(uid, 20),
     ]);
-    return { att, reports, shortages };
+    return { att, todayReport, shortages };
   }, [profile?.id, today]);
 
   if (!profile) return null;
 
-  const reports = data?.reports ?? [];
-  const byDate = new Map(reports.map((r) => [r.report_date, r]));
-  const todayIncome = byDate.get(today)?.net_income ?? 0;
-  const weekIncome = reports.filter((r) => r.report_date >= weekStart).reduce((s, r) => s + r.net_income, 0);
-  const chart = dateRangeList(sevenAgo, today).map((d) => ({ label: formatDateAxis(d), value: byDate.get(d)?.net_income ?? 0 }));
+  const todayReport = data?.todayReport ?? null;
   const openShortages = (data?.shortages ?? []).filter((s) => s.status !== 'done');
   const att = data?.att;
 
@@ -106,24 +94,23 @@ export default function EmployeeHomePage() {
         </div>
       </Card>
 
-      {/* Ringkasan pemasukan */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Pendapatan bersih hari ini" value={loading ? '…' : formatRupiah(todayIncome)} icon={<Wallet className="h-5 w-5" />} hint={byDate.get(today) ? 'Sudah dilaporkan' : 'Belum dilaporkan'} />
-        <StatCard label="Pendapatan bersih minggu ini" value={loading ? '…' : formatRupiah(weekIncome)} icon={<TrendingUp className="h-5 w-5" />} tone="success" hint={`Sejak ${formatDateShort(weekStart)}`} />
-      </div>
-
-      {/* Grafik 7 hari */}
+      {/* Pendapatan bersih semua loket */}
       <Card>
         <CardHeader
-          title="Penjualan 7 hari terakhir"
-          subtitle="Pendapatan bersih (cash + QRIS + EDC − modal)"
+          title="Pendapatan bersih 7 hari terakhir"
+          subtitle={
+            loading ? 'Seluruh laporan semua karyawan' : `Seluruh laporan semua karyawan · Laporan Anda hari ini: ${todayReport ? 'sudah dikirim' : 'belum dikirim'}`
+          }
+          icon={<TrendingUp className="h-5 w-5" />}
           action={
             <Link to="/app/grafik" className="text-sm font-semibold text-brand hover:underline">
               Isi laporan
             </Link>
           }
         />
-        <div className="px-2 pb-4 pt-3 sm:px-4">{loading ? <LoadingBlock /> : <IncomeAreaChart data={chart} height={220} />}</div>
+        <div className="p-5">
+          <NetIncomeOverview days={7} height={220} showOutletBreakdown={false} />
+        </div>
       </Card>
 
       {/* Laporan stok belum selesai */}

@@ -122,6 +122,9 @@ export interface DailySalesReport {
   safe_capital: number;
   /** Pendapatan bersih = total uang - uang modal brankas (dihitung database) */
   net_income: number;
+  /** Admin terakhir yang mengisi/mengubah uang laporan ini */
+  money_edited_by: string | null;
+  money_edited_at: string | null;
   notes: string | null;
   status: SalesReportStatus;
   admin_notes: string | null;
@@ -133,6 +136,16 @@ export interface DailySalesReport {
   items?: SalesReportItem[];
   profile?: Pick<Profile, 'id' | 'full_name' | 'avatar_path'> | null;
   outlet?: Pick<Outlet, 'id' | 'name'> | null;
+}
+
+/** Ringkasan agregat per tanggal per loket — dapat dilihat semua user aktif. */
+export interface SalesDailySummary {
+  report_date: string;
+  outlet_id: string;
+  net_income: number;
+  total_income: number;
+  total_items: number;
+  report_count: number;
 }
 
 export interface InventoryItem {

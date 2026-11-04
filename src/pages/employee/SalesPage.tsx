@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { BarChart3, CheckCircle2, Lock, Minus, Plus, Save, ShoppingBag, Wallet } from 'lucide-react';
+import { BarChart3, CheckCircle2, Lock, Minus, Plus, Save, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useAsync } from '@/hooks/useAsync';
@@ -9,10 +9,9 @@ import { CurrencyInput, Field, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { SalesStatusBadge } from '@/components/ui/Badge';
 import { Alert, EmptyState, ErrorState, LoadingBlock } from '@/components/ui/Feedback';
-import { IncomeAreaChart, ProductBarChart, TrendLineChart } from '@/components/charts/Charts';
+import { ProductBarChart } from '@/components/charts/Charts';
+import { NetIncomeOverview } from '@/components/charts/NetIncomeOverview';
 import {
-  dateRangeList,
-  formatDateAxis,
   formatDateLong,
   formatDateShort,
   formatNumber,
@@ -107,6 +106,7 @@ export default function SalesPage() {
       });
       toast.success(report ? 'Laporan hari ini berhasil diperbarui.' : 'Laporan penjualan berhasil dikirim.');
       await Promise.all([formQ.reload(), chartQ.reload()]);
+      setSummaryKey((k) => k + 1);
     } catch (err) {
       toast.error(toMessage(err));
     } finally {
@@ -120,14 +120,7 @@ export default function SalesPage() {
   const chartQ = useAsync(() => salesService.listMine(profile!.id, { from: chartFrom, to: today }), [profile?.id, chartFrom, today]);
   const chartReports = chartQ.data ?? [];
 
-  const trend = useMemo(() => {
-    const byDate = new Map(chartReports.map((r) => [r.report_date, r]));
-    return dateRangeList(chartFrom, today).map((d) => ({
-      label: formatDateAxis(d),
-      'Pendapatan bersih': byDate.get(d)?.net_income ?? 0,
-      'Estimasi produk': byDate.get(d)?.estimated_total ?? 0,
-    }));
-  }, [chartReports, chartFrom, today]);
+  const [summaryKey, setSummaryKey] = useState(0);
 
   const productAgg = useMemo(() => {
     const m = new Map<string, number>();
@@ -135,7 +128,6 @@ export default function SalesPage() {
     return [...m.entries()].map(([name, quantity]) => ({ name, quantity })).sort((a, b) => b.quantity - a.quantity);
   }, [chartReports]);
 
-  const periodIncome = chartReports.reduce((s, r) => s + r.net_income, 0);
   const periodItems = chartReports.reduce((s, r) => s + r.total_items, 0);
 
   return (
@@ -299,7 +291,8 @@ export default function SalesPage() {
       {/* ---------- Grafik ---------- */}
       <Card>
         <CardHeader
-          title="Grafik penjualan"
+          title="Grafik pendapatan bersih"
+          subtitle="Seluruh laporan semua karyawan · (cash + QRIS + EDC) − modal brankas"
           icon={<BarChart3 className="h-5 w-5" />}
           action={
             <div className="w-36">
@@ -312,26 +305,17 @@ export default function SalesPage() {
           }
         />
         <div className="space-y-5 p-5">
+          <NetIncomeOverview days={days} refreshKey={summaryKey} />
+          <hr className="border-line/70" />
+          <p className="text-sm font-semibold text-brand-dark">Penjualan produk Anda</p>
           {chartQ.loading ? (
             <LoadingBlock />
           ) : chartQ.error ? (
             <ErrorState message={chartQ.error} onRetry={chartQ.reload} />
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label={`Pendapatan bersih ${days} hari`} value={formatRupiah(periodIncome)} icon={<Wallet className="h-5 w-5" />} />
-                <StatCard label="Produk terjual" value={formatNumber(periodItems)} icon={<ShoppingBag className="h-5 w-5" />} tone="success" />
-              </div>
+              <StatCard label={`Produk terjual ${days} hari`} value={formatNumber(periodItems)} icon={<ShoppingBag className="h-5 w-5" />} tone="success" />
               <div>
-                <p className="mb-2 text-sm font-semibold">Pendapatan bersih vs estimasi produk</p>
-                {days <= 7 ? (
-                  <TrendLineChart data={trend} series={['Pendapatan bersih', 'Estimasi produk']} height={240} />
-                ) : (
-                  <IncomeAreaChart data={trend.map((t) => ({ label: t.label as string, value: t['Pendapatan bersih'] as number }))} height={240} name="Pendapatan bersih" />
-                )}
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-semibold">Produk terjual</p>
                 {productAgg.length ? <ProductBarChart data={productAgg} /> : <EmptyState title="Belum ada data produk" />}
               </div>
             </>

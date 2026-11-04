@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Eye, Landmark, ShoppingBag, Wallet } from 'lucide-react';
+import { Eye, Landmark, Plus, ShoppingBag, Wallet } from 'lucide-react';
 import { useAsync } from '@/hooks/useAsync';
 import { useOutlets } from '@/hooks/useOutlets';
 import { salesService } from '@/services/salesService';
@@ -10,6 +10,7 @@ import { SalesStatusBadge } from '@/components/ui/Badge';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/Feedback';
 import { OutletSelect } from '@/components/admin/OutletSelect';
 import { SalesReportDetailModal } from '@/components/admin/SalesReportDetailModal';
+import { AdminMoneyModal } from '@/components/admin/AdminMoneyModal';
 import { PeriodFilter, defaultPeriod, periodLabel, periodToRange } from '@/components/ui/PeriodFilter';
 import { formatDateShort, formatNumber, formatRupiah } from '@/lib/format';
 import type { DailySalesReport, SalesReportStatus } from '@/types';
@@ -20,6 +21,7 @@ export default function SalesReportsPage() {
   const [status, setStatus] = useState<SalesReportStatus | ''>('');
   const [period, setPeriod] = useState(defaultPeriod('day'));
   const [detail, setDetail] = useState<DailySalesReport | null>(null);
+  const [inputOpen, setInputOpen] = useState(false);
   const range = periodToRange(period);
 
   const q = useAsync(() => salesService.list(range, { outletId: outletId || null }), [range.from, range.to, outletId]);
@@ -32,7 +34,15 @@ export default function SalesReportsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Laporan Penjualan" subtitle={`Periode ${periodLabel(period)}`} />
+      <PageHeader
+        title="Laporan Penjualan"
+        subtitle={`Periode ${periodLabel(period)}`}
+        action={
+          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setInputOpen(true)}>
+            Input uang
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-end gap-2">
         <PeriodFilter value={period} onChange={setPeriod} />
@@ -114,6 +124,7 @@ export default function SalesReportsPage() {
       </Card>
 
       <SalesReportDetailModal report={detail} onClose={() => setDetail(null)} onChanged={q.reload} />
+      <AdminMoneyModal open={inputOpen} defaultDate={range.to} onClose={() => setInputOpen(false)} onSaved={q.reload} />
     </div>
   );
 }
